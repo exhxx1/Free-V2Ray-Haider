@@ -10,8 +10,10 @@ from datetime import datetime
 
 # ================= الإعدادات الشخصية والـ SEO =================
 BRAND_NAME = "Haider Adel"
+BRAND_AR = "حيدر عادل"
 SEO_SUFFIX = " | Haider Adel Free V2Ray"
 TELEGRAM_USER = "https://t.me/RXAXX"
+GOOGLE_VERIFICATION = "DEw0QfBJIZ8cq1yUyPN-tlFx7cQFFSRo6_CSTILXfzE"
 
 # 18 مصدراً عالمياً تتحدث باستمرار
 SOURCES = [
@@ -85,11 +87,14 @@ def check_and_rename_node(parsed_item, index):
     except:
         return None
 
-def generate_html(categorized_nodes, total_count):
-    """بناء منصة ويب تفاعلية متعددة اللغات تعرض السيرفرات والروابط"""
+def generate_html_and_seo(categorized_nodes, total_count):
+    """بناء المنصة التفاعلية + ملفات أرشفة جوجل (Sitemap & Robots)"""
     repo = os.environ.get('GITHUB_REPOSITORY', 'exhxx1/Free-V2Ray-Haider')
+    user_name, repo_name = repo.split('/') if '/' in repo else ('exhxx1', 'Free-V2Ray-Haider')
     base_raw_url = f"https://raw.githubusercontent.com/{repo}/main"
+    site_url = f"https://{user_name}.github.io/{repo_name}/"
     date_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
+    today_iso = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%S+00:00')
 
     nodes_for_js = {
         "vless": categorized_nodes["vless"],
@@ -99,13 +104,35 @@ def generate_html(categorized_nodes, total_count):
     }
 
     html_template = """<!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>__BRAND_NAME__ | Free V2Ray, VLESS, VMess, Trojan & Sing-box Nodes</title>
-    <meta name="description" content="Free tested V2Ray, VLESS, VMess, Trojan, Shadowsocks servers updated every 4 hours by __BRAND_NAME__. سرور رایگان V2Ray حیدر عادل. Бесплатные серверы V2Ray.">
-    <meta name="keywords" content="free v2ray, vless free, vmess nodes, trojan proxy, shadowsocks free, iran vpn, russia bypass, sing-box config, v2rayng sub, __BRAND_NAME__">
+    <meta name="google-site-verification" content="__GOOGLE_VERIFICATION__" />
+    <title>__BRAND_AR__ | __BRAND_NAME__ - Free V2Ray, VLESS, VMess & Sing-box Servers</title>
+    <meta name="description" content="الموقع الرسمي لـ __BRAND_AR__ (__BRAND_NAME__) لسيرفرات V2Ray و VLESS و VMess و Trojan و Sing-box المجانية والمفحوصة تلقائياً كل 4 ساعات. سرور رایگان V2Ray حیدر عادل. Бесплатные серверы V2Ray.">
+    <meta name="keywords" content="حيدر عادل, موقع حيدر عادل, سيرفرات حيدر عادل, Haider Adel, Haider Adel Free V2Ray, free v2ray, vless free, vmess nodes, trojan proxy, shadowsocks free, iran vpn, russia bypass, sing-box config, v2rayng sub, حیدر عادل">
+    <meta name="author" content="__BRAND_AR__ - __BRAND_NAME__">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="__SITE_URL__" />
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="__BRAND_AR__ | __BRAND_NAME__ Network - Free V2Ray & Sing-box Nodes">
+    <meta property="og:description" content="سيرفرات V2Ray و Sing-box مجانية، مفحوصة ومحدثة تلقائياً كل 4 ساعات بواسطة __BRAND_AR__ (__BRAND_NAME__).">
+    <meta property="og:url" content="__SITE_URL__">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "__BRAND_AR__ | __BRAND_NAME__ Network",
+      "alternateName": ["حيدر عادل", "Haider Adel", "Haider Adel Free V2Ray", "حیدر عادل"],
+      "url": "__SITE_URL__",
+      "author": {
+        "@type": "Person",
+        "name": "__BRAND_AR__ (Haider Adel)",
+        "url": "__TELEGRAM_USER__"
+      }
+    }
+    </script>
     <style>
         :root {
             --bg-main: #0b0f17;
@@ -184,7 +211,7 @@ def generate_html(categorized_nodes, total_count):
             background: radial-gradient(circle at top, rgba(0, 255, 136, 0.12), transparent 60%);
         }
         .hero h1 {
-            font-size: 2.6rem;
+            font-size: 2.5rem;
             color: var(--accent);
             letter-spacing: 0.5px;
             margin-bottom: 8px;
@@ -375,56 +402,56 @@ def generate_html(categorized_nodes, total_count):
 
     <div class="top-bar">
         <div class="lang-switcher">
-            <button class="lang-btn" onclick="setLanguage('ar')" id="btn-ar">🇮🇶 العربية</button>
-            <button class="lang-btn active" onclick="setLanguage('en')" id="btn-en">🇬🇧 English</button>
+            <button class="lang-btn active" onclick="setLanguage('ar')" id="btn-ar">🇮🇶 العربية</button>
+            <button class="lang-btn" onclick="setLanguage('en')" id="btn-en">🇬🇧 English</button>
             <button class="lang-btn" onclick="setLanguage('fa')" id="btn-fa">🇮🇷 فارسی</button>
             <button class="lang-btn" onclick="setLanguage('ru')" id="btn-ru">🇷🇺 Русский</button>
         </div>
         <a href="__TELEGRAM_USER__" target="_blank" class="tg-top-btn">
-            <span>✈️</span> <span data-i18n="contact_tg">Contact @RXAXX</span>
+            <span>✈️</span> <span data-i18n="contact_tg">تواصل معي @RXAXX</span>
         </a>
     </div>
 
     <div class="hero">
-        <h1>__BRAND_NAME__ Network</h1>
-        <p data-i18n="hero_sub">Tested, Classified & High-Speed Free V2Ray / Sing-box Servers Updated Automatically</p>
+        <h1>__BRAND_NAME__ | __BRAND_AR__</h1>
+        <p data-i18n="hero_sub">سيرفرات V2Ray و Sing-box مجانية، مفحوصة بالبينج ومحدثة تلقائياً كل 4 ساعات</p>
 
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-value">__TOTAL_COUNT__</div>
-                <div class="stat-label" data-i18n="stat_alive">Online Tested Servers</div>
+                <div class="stat-label" data-i18n="stat_alive">سيرفر شغال ومفحوص</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">4 Hours</div>
-                <div class="stat-label" data-i18n="stat_cycle">Auto-Update Cycle</div>
+                <div class="stat-label" data-i18n="stat_cycle">دورة التحديث التلقائي</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value" style="font-size: 1.1rem; margin-top: 10px;">__DATE_NOW__</div>
-                <div class="stat-label" data-i18n="stat_updated">Last Checked (UTC)</div>
+                <div class="stat-label" data-i18n="stat_updated">آخر فحص وتحديث</div>
             </div>
         </div>
     </div>
 
     <div class="container">
         <h2 class="section-title">
-            <span data-i18n="sub_section_title">📦 Subscription Links (For V2RayNG / Sing-box / Streisand)</span>
+            <span data-i18n="sub_section_title">📦 روابط الاشتراك الشاملة (تضاف داخل التطبيق مباشرة)</span>
         </h2>
         <div class="sub-grid" id="sub-grid-container"></div>
 
         <h2 class="section-title">
-            <span data-i18n="nodes_section_title">⚡ Direct Server List (Click to Copy Individual Configs)</span>
+            <span data-i18n="nodes_section_title">⚡ تصفح السيرفرات المباشر (انسخ أي سيرفر بضغطة زر)</span>
         </h2>
 
         <div class="tabs-bar" id="tabs-container"></div>
         <div class="nodes-grid" id="nodes-container"></div>
 
         <div class="load-more-wrap">
-            <button class="load-more-btn" id="load-more-btn" onclick="loadMoreNodes()" data-i18n="load_more">Load More Servers</button>
+            <button class="load-more-btn" id="load-more-btn" onclick="loadMoreNodes()" data-i18n="load_more">عرض المزيد من السيرفرات</button>
         </div>
     </div>
 
     <footer>
-        <p>Powered by <b>__BRAND_NAME__</b> | <a href="__TELEGRAM_USER__" style="color: var(--accent); text-decoration: none;">@RXAXX</a></p>
+        <p>Powered by <b>__BRAND_AR__ (__BRAND_NAME__)</b> | <a href="__TELEGRAM_USER__" style="color: var(--accent); text-decoration: none;">@RXAXX</a></p>
     </footer>
 
     <div id="toast">Copied!</div>
@@ -633,7 +660,10 @@ def generate_html(categorized_nodes, total_count):
 
     final_html = (
         html_template
+        .replace("__GOOGLE_VERIFICATION__", GOOGLE_VERIFICATION)
         .replace("__BRAND_NAME__", BRAND_NAME)
+        .replace("__BRAND_AR__", BRAND_AR)
+        .replace("__SITE_URL__", site_url)
         .replace("__TOTAL_COUNT__", str(total_count))
         .replace("__DATE_NOW__", date_now)
         .replace("__BASE_RAW_URL__", base_raw_url)
@@ -643,6 +673,24 @@ def generate_html(categorized_nodes, total_count):
 
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(final_html)
+
+    # توليد خريطة الموقع Sitemap لجوجل
+    sitemap_xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>{site_url}</loc>
+    <lastmod>{today_iso}</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>"""
+    with open("sitemap.xml", "w", encoding="utf-8") as f:
+        f.write(sitemap_xml)
+
+    # توليد ملف Robots لجوجل
+    robots_txt = f"User-agent: *\nAllow: /\nSitemap: {site_url}sitemap.xml\n"
+    with open("robots.txt", "w", encoding="utf-8") as f:
+        f.write(robots_txt)
 
 def main():
     print(f"🚀 Starting {BRAND_NAME} Mega Spider & Checker (18 Sources)...")
@@ -663,7 +711,6 @@ def main():
         except Exception as e:
             print(f"⚠️ Skipped {url}: {e}")
 
-    # فلترة السيرفرات لمنع فحص نفس الـ IP والبورت أكثر من مرة
     unique_endpoints = {}
     for node in raw_nodes:
         info = parse_node_info(node)
@@ -702,8 +749,8 @@ def main():
                 f.write(b64_content)
             print(f"💾 Saved {cat}.txt ({len(nodes)} nodes)")
 
-    generate_html(categorized, total_alive)
-    print("🌍 Generated Interactive Multi-Language index.html")
+    generate_html_and_seo(categorized, total_alive)
+    print("🌍 Generated index.html, sitemap.xml, and robots.txt!")
 
 if __name__ == "__main__":
     main()
