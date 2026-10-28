@@ -1,0 +1,35 @@
+name: Haider Adel Spider
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-nodes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run Spider Script
+        run: python main.py
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "Haider Adel Bot"
+          git config --global user.email "bot@haideradel.com"
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "Auto Update Servers: $(date -u +'%Y-%m-%d %H:%M')"
+          git push
