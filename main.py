@@ -13,7 +13,7 @@ BRAND_NAME = "Haider Adel"
 SEO_SUFFIX = " | Haider Adel Free V2Ray"
 TELEGRAM_USER = "https://t.me/RXAXX"
 
-# haider
+# المصادر العالمية لسحب السيرفرات
 SOURCES = [
     "https://shadowmere.xyz/api/b64sub/",
     "https://raw.githubusercontent.com/exhxx1/V2Nodes-Sub/main/sub.txt",
@@ -34,7 +34,7 @@ def decode_base64(data):
         return ""
 
 def check_and_rename_node(node, index):
-    """دالة فحص السيرفر (Ping) وتعديل اسمه للتصدر بجوجل"""
+    """فحص السيرفر (TCP Ping) وإضافة حقوق حيدر عادل للـ SEO"""
     host = None
     port = None
     protocol = None
@@ -42,7 +42,6 @@ def check_and_rename_node(node, index):
     new_name = f"Node {index:03d}{SEO_SUFFIX}"
 
     try:
-        # استخراج البروتوكول
         protocol = node.split("://")[0].lower()
 
         if protocol == "vmess":
@@ -54,125 +53,647 @@ def check_and_rename_node(node, index):
             renamed_node = f"vmess://{base64.b64encode(json.dumps(config).encode('utf-8')).decode('utf-8')}"
             
         elif protocol in ["vless", "trojan", "ss"]:
-            match = re.search(r'@([^:/]+):(\d+)', node)
+            match = re.search(r'@([^:/?#]+):(\d+)', node)
             if match:
                 host = match.group(1)
                 port = int(match.group(2))
             base_url = node.split("#")[0]
             renamed_node = f"{base_url}#{new_name}"
+        else:
+            return None
             
     except:
-        return None # تجاهل السيرفر المعطوب برمجياً
+        return None
 
-    # فحص السيرفر (TCP Ping) - للتأكد انه شغال ومو ميت
     if host and port:
         try:
             socket.create_connection((host, int(port)), timeout=1.5)
         except:
-            return None # السيرفر ميت، اتركه
+            return None
 
     return (protocol, renamed_node)
 
 def generate_html(categorized_nodes, total_count):
-    """برمجة صفحة الويب بـ 4 لغات مع تصنيف الروابط"""
-    repo = os.environ.get('GITHUB_REPOSITORY', 'USER/REPO')
+    """بناء منصة ويب تفاعلية متعددة اللغات تعرض السيرفرات والروابط"""
+    repo = os.environ.get('GITHUB_REPOSITORY', 'exhxx1/Free-V2Ray-Haider')
     base_raw_url = f"https://raw.githubusercontent.com/{repo}/main"
     date_now = datetime.utcnow().strftime('%Y-%m-%d %H:%M UTC')
-    
-    html_content = f"""<!DOCTYPE html>
-<html lang="en">
+
+    nodes_for_js = {
+        "vless": categorized_nodes["vless"],
+        "vmess": categorized_nodes["vmess"],
+        "trojan": categorized_nodes["trojan"],
+        "ss": categorized_nodes["ss"]
+    }
+
+    html_template = """<!DOCTYPE html>
+<html lang="en" dir="ltr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free V2Ray & Sing-box Nodes | {BRAND_NAME}</title>
-    <meta name="description" content="Free V2Ray, Vless, Vmess, Trojan nodes updated hourly. سرور رایگان v2ray. Бесплатные серверы V2Ray.">
-    <meta name="keywords" content="free v2ray, vless free, vmess free, trojan, iran vpn, anti-filter, {BRAND_NAME}">
+    <title>__BRAND_NAME__ | Free V2Ray, VLESS, VMess, Trojan & Sing-box Nodes</title>
+    <meta name="description" content="Free tested V2Ray, VLESS, VMess, Trojan, Shadowsocks servers updated every 4 hours by __BRAND_NAME__. سرور رایگان V2Ray حیدر عادل. Бесплатные серверы V2Ray.">
+    <meta name="keywords" content="free v2ray, vless free, vmess nodes, trojan proxy, shadowsocks free, iran vpn, russia bypass, sing-box config, v2rayng sub, __BRAND_NAME__">
     <style>
-        body {{ background-color: #121212; color: #fff; font-family: 'Segoe UI', Tahoma, sans-serif; margin: 0; padding: 0; text-align: center; }}
-        .header {{ background-color: #1a1a1a; padding: 25px; border-bottom: 2px solid #00ff88; }}
-        .header h1 {{ margin: 0; color: #00ff88; font-size: 2.2em; }}
-        .header p {{ color: #ccc; font-size: 1.1em; }}
-        .container {{ max-width: 900px; margin: 30px auto; padding: 20px; }}
-        .stats {{ background-color: #1e1e1e; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.3); margin-bottom: 30px; }}
-        .stats h2 {{ color: #00ff88; font-size: 3em; margin: 10px 0; }}
-        .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 30px; }}
-        .card {{ background: #1e1e1e; padding: 20px; border-radius: 10px; border: 1px solid #333; }}
-        .card h3 {{ color: #00ff88; margin-top: 0; text-transform: uppercase; }}
-        input.link-box {{ width: 90%; padding: 12px; background: #2a2a2a; border: 1px solid #444; color: #00ff88; font-size: 0.9em; border-radius: 5px; text-align: center; margin-bottom: 10px; cursor: pointer; }}
-        .btn {{ display: inline-block; background-color: #0088cc; color: #fff; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 5px; transition: 0.3s; margin-top: 20px; }}
-        .btn:hover {{ background-color: #006699; box-shadow: 0 0 15px #0088cc; }}
-        .langs {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 40px; text-align: left; }}
-        .lang-box {{ background: #1a1a1a; padding: 15px; border-radius: 8px; border-left: 3px solid #00ff88; }}
-        .lang-box h4 {{ color: #00ff88; margin-top: 0; }}
-        .lang-box p {{ font-size: 0.9em; color: #bbb; line-height: 1.5; }}
+        :root {
+            --bg-main: #0b0f17;
+            --bg-card: #151c28;
+            --bg-card-hover: #1c2636;
+            --accent: #00ff88;
+            --accent-dim: rgba(0, 255, 136, 0.12);
+            --tg-blue: #0088cc;
+            --text-main: #f0f6fc;
+            --text-muted: #8b949e;
+            --border: #263142;
+            --vless-color: #a371f7;
+            --vmess-color: #58a6ff;
+            --trojan-color: #f0883e;
+            --ss-color: #3fb950;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+
+        /* شريط اللغات والتواصل العلوي */
+        .top-bar {
+            background: rgba(21, 28, 40, 0.9);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .lang-switcher {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .lang-btn {
+            background: var(--bg-main);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+        .lang-btn:hover, .lang-btn.active {
+            border-color: var(--accent);
+            color: var(--accent);
+            background: var(--accent-dim);
+        }
+        .tg-top-btn {
+            background: var(--tg-blue);
+            color: #fff;
+            text-decoration: none;
+            padding: 7px 16px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .tg-top-btn:hover { background: #006da3; box-shadow: 0 0 12px rgba(0,136,204,0.5); }
+
+        /* الهيدر الرئيسي */
+        .hero {
+            text-align: center;
+            padding: 45px 20px 30px;
+            background: radial-gradient(circle at top, rgba(0, 255, 136, 0.12), transparent 60%);
+        }
+        .hero h1 {
+            font-size: 2.6rem;
+            color: var(--accent);
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 20px rgba(0,255,136,0.25);
+        }
+        .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 650px; margin: 0 auto 25px; }
+
+        /* شريط الإحصائيات */
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            max-width: 850px;
+            margin: 0 auto;
+        }
+        .stat-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            padding: 15px 28px;
+            border-radius: 12px;
+            min-width: 180px;
+        }
+        .stat-value { font-size: 2rem; font-weight: 800; color: var(--accent); }
+        .stat-label { font-size: 0.85rem; color: var(--text-muted); }
+
+        .container { max-width: 1150px; margin: 0 auto; padding: 20px; }
+
+        .section-title {
+            font-size: 1.4rem;
+            margin: 35px 0 18px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: var(--text-main);
+        }
+
+        /* بطاقات روابط الاشتراك */
+        .sub-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 15px;
+        }
+        .sub-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 18px;
+            text-align: center;
+            transition: 0.25s;
+        }
+        .sub-card:hover { border-color: var(--accent); transform: translateY(-3px); }
+        .sub-card h3 { font-size: 1.1rem; margin-bottom: 6px; color: var(--accent); }
+        .sub-count { font-size: 0.85rem; color: var(--text-muted); margin-bottom: 14px; }
+        .copy-sub-btn {
+            width: 100%;
+            background: var(--accent);
+            color: #0b0f17;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 0.9rem;
+        }
+        .copy-sub-btn:hover { opacity: 0.9; box-shadow: 0 0 12px rgba(0,255,136,0.4); }
+
+        /* أزرار فلترة البروتوكولات */
+        .tabs-bar {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+        .tab-btn {
+            background: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .tab-btn span.badge {
+            background: var(--bg-main);
+            color: var(--accent);
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+        }
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--accent);
+            color: #0b0f17;
+            border-color: var(--accent);
+        }
+        .tab-btn.active span.badge, .tab-btn:hover span.badge {
+            background: #0b0f17;
+            color: var(--accent);
+        }
+
+        /* شبكة بطاقات السيرفرات الفردية */
+        .nodes-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
+            gap: 16px;
+        }
+        .node-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: 0.2s;
+        }
+        .node-card:hover {
+            background: var(--bg-card-hover);
+            border-color: #3b4c66;
+        }
+        .node-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .node-title {
+            font-weight: 700;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .online-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent);
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 8px var(--accent);
+        }
+        .proto-badge {
+            font-size: 0.75rem;
+            font-weight: 800;
+            padding: 3px 9px;
+            border-radius: 5px;
+            text-transform: uppercase;
+            color: #fff;
+        }
+        .proto-vless { background: var(--vless-color); }
+        .proto-vmess { background: var(--vmess-color); }
+        .proto-trojan { background: var(--trojan-color); }
+        .proto-ss { background: var(--ss-color); }
+
+        .node-code {
+            background: var(--bg-main);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            font-family: monospace;
+            font-size: 0.8rem;
+            padding: 10px;
+            border-radius: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-bottom: 12px;
+            direction: ltr;
+            text-align: left;
+        }
+        .copy-node-btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 9px;
+            border-radius: 7px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            width: 100%;
+        }
+        .copy-node-btn:hover {
+            background: var(--accent);
+            color: #0b0f17;
+        }
+
+        .load-more-wrap { text-align: center; margin-top: 28px; }
+        .load-more-btn {
+            background: var(--bg-card);
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 12px 35px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .load-more-btn:hover { background: var(--accent); color: #0b0f17; }
+
+        /* إشعار النسخ العائم */
+        #toast {
+            position: fixed;
+            bottom: 25px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent);
+            color: #0b0f17;
+            padding: 12px 28px;
+            border-radius: 30px;
+            font-weight: 800;
+            box-shadow: 0 5px 20px rgba(0,255,136,0.4);
+            transition: 0.3s ease;
+            z-index: 999;
+        }
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        footer {
+            text-align: center;
+            margin-top: 50px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>{BRAND_NAME} Network</h1>
-        <p>Tested, Classified & 100% Free V2Ray Nodes</p>
+
+    <div class="top-bar">
+        <div class="lang-switcher">
+            <button class="lang-btn" onclick="setLanguage('ar')" id="btn-ar">🇮🇶 العربية</button>
+            <button class="lang-btn active" onclick="setLanguage('en')" id="btn-en">🇬🇧 English</button>
+            <button class="lang-btn" onclick="setLanguage('fa')" id="btn-fa">🇮🇷 فارسی</button>
+            <button class="lang-btn" onclick="setLanguage('ru')" id="btn-ru">🇷🇺 Русский</button>
+        </div>
+        <a href="__TELEGRAM_USER__" target="_blank" class="tg-top-btn">
+            <span>✈️</span> <span data-i18n="contact_tg">Contact @RXAXX</span>
+        </a>
     </div>
+
+    <div class="hero">
+        <h1>__BRAND_NAME__ Network</h1>
+        <p data-i18n="hero_sub">Tested, Classified & High-Speed Free V2Ray / Sing-box Servers Updated Automatically</p>
+
+        <div class="stats-bar">
+            <div class="stat-item">
+                <div class="stat-value">__TOTAL_COUNT__</div>
+                <div class="stat-label" data-i18n="stat_alive">Online Tested Servers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">4 Hours</div>
+                <div class="stat-label" data-i18n="stat_cycle">Auto-Update Cycle</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" style="font-size: 1.1rem; margin-top: 10px;">__DATE_NOW__</div>
+                <div class="stat-label" data-i18n="stat_updated">Last Checked (UTC)</div>
+            </div>
+        </div>
+    </div>
+
     <div class="container">
-        <div class="stats">
-            <p>Tested Alive Servers</p>
-            <h2>{total_count}</h2>
-            <p>Last Checked: {date_now}</p>
-        </div>
+        <!-- قسم روابط الاشتراك الشاملة -->
+        <h2 class="section-title">
+            <span data-i18n="sub_section_title">📦 Subscription Links (For V2RayNG / Sing-box / Streisand)</span>
+        </h2>
+        <div class="sub-grid" id="sub-grid-container"></div>
 
-        <div class="grid">
-            <div class="card">
-                <h3>🌟 All Nodes (Mix)</h3>
-                <p>Count: {total_count}</p>
-                <input class="link-box" type="text" value="{base_raw_url}/all.txt" readonly onclick="this.select();">
-            </div>
-            <div class="card">
-                <h3>🚀 VLESS</h3>
-                <p>Count: {len(categorized_nodes['vless'])}</p>
-                <input class="link-box" type="text" value="{base_raw_url}/vless.txt" readonly onclick="this.select();">
-            </div>
-            <div class="card">
-                <h3>⚡ VMESS</h3>
-                <p>Count: {len(categorized_nodes['vmess'])}</p>
-                <input class="link-box" type="text" value="{base_raw_url}/vmess.txt" readonly onclick="this.select();">
-            </div>
-            <div class="card">
-                <h3>🐎 TROJAN</h3>
-                <p>Count: {len(categorized_nodes['trojan'])}</p>
-                <input class="link-box" type="text" value="{base_raw_url}/trojan.txt" readonly onclick="this.select();">
-            </div>
-        </div>
+        <!-- قسم عرض السيرفرات المفردة -->
+        <h2 class="section-title">
+            <span data-i18n="nodes_section_title">⚡ Direct Server List (Click to Copy Individual Configs)</span>
+        </h2>
 
-        <a href="{TELEGRAM_USER}" target="_blank" class="btn">💬 Contact @RXAXX on Telegram</a>
+        <div class="tabs-bar" id="tabs-container"></div>
+        <div class="nodes-grid" id="nodes-container"></div>
 
-        <div class="langs">
-            <div class="lang-box">
-                <h4>🇬🇧 English</h4>
-                <p>All servers are Ping-tested before publishing. Copy the link of your preferred protocol and import it into V2RayNG, Sing-box, or Clash.</p>
-            </div>
-            <div class="lang-box">
-                <h4>🇮🇷 فارسی (Persian)</h4>
-                <p>تمامی سرورها قبل از انتشار پینگ و تست می‌شوند. لینک پروتکل دلخواه خود را کپی کرده و در V2RayNG یا Sing-box وارد کنید.</p>
-            </div>
-            <div class="lang-box">
-                <h4>🇷🇺 Русский (Russian)</h4>
-                <p>Все серверы проверены на работоспособность. Скопируйте ссылку нужного протокола и вставьте в V2RayNG/Sing-box.</p>
-            </div>
-            <div class="lang-box">
-                <h4>🇮🇶 العربية (Arabic)</h4>
-                <p>يتم فحص جميع السيرفرات وطرد العاطلة تلقائياً. انسخ رابط البروتوكول الذي يناسبك وضعه في تطبيق التخطي الخاص بك.</p>
-            </div>
+        <div class="load-more-wrap">
+            <button class="load-more-btn" id="load-more-btn" onclick="loadMoreNodes()" data-i18n="load_more">Load More Servers</button>
         </div>
     </div>
+
+    <footer>
+        <p>Powered by <b>__BRAND_NAME__</b> | <a href="__TELEGRAM_USER__" style="color: var(--accent); text-decoration: none;">@RXAXX</a></p>
+    </footer>
+
+    <div id="toast">Copied!</div>
+
+    <script>
+        const BASE_RAW_URL = "__BASE_RAW_URL__";
+        const RAW_NODES = __NODES_JSON__;
+        
+        // تجميع الكل في مصفوفة واحدة مع نوع البروتوكول
+        const ALL_LIST = [];
+        ['vless', 'vmess', 'trojan', 'ss'].forEach(proto => {
+            (RAW_NODES[proto] || []).forEach((cfg, idx) => {
+                ALL_LIST.push({ proto: proto, config: cfg, id: idx + 1 });
+            });
+        });
+
+        // قاموس الترجمة الكامل للموقع
+        const I18N = {
+            en: {
+                dir: "ltr",
+                contact_tg: "Contact @RXAXX",
+                hero_sub: "Tested, Classified & High-Speed Free V2Ray / Sing-box Servers Updated Automatically",
+                stat_alive: "Online Tested Servers",
+                stat_cycle: "Auto-Update Cycle",
+                stat_updated: "Last Checked (UTC)",
+                sub_section_title: "📦 Subscription Links (Import All at Once)",
+                nodes_section_title: "⚡ Direct Server Explorer (Copy Individual Servers)",
+                copy_sub: "📋 Copy Subscription",
+                copy_node: "📋 Copy Config",
+                copied_msg: "✅ Copied to Clipboard!",
+                load_more: "Show More Servers",
+                server_unit: "Servers",
+                tab_all: "All Nodes"
+            },
+            ar: {
+                dir: "rtl",
+                contact_tg: "تواصل معي @RXAXX",
+                hero_sub: "سيرفرات V2Ray و Sing-box مجانية، مفحوصة بالبينج ومحدثة تلقائياً كل 4 ساعات",
+                stat_alive: "سيرفر شغال ومفحوص",
+                stat_cycle: "دورة التحديث التلقائي",
+                stat_updated: "آخر فحص وتحديث",
+                sub_section_title: "📦 روابط الاشتراك الشاملة (تضاف داخل التطبيق مباشرة)",
+                nodes_section_title: "⚡ تصفح السيرفرات المباشر (انسخ أي سيرفر بضغطة زر)",
+                copy_sub: "📋 نسخ رابط الاشتراك",
+                copy_node: "📋 نسخ هذا السيرفر",
+                copied_msg: "✅ تم النسخ بنجاح!",
+                load_more: "عرض المزيد من السيرفرات",
+                server_unit: "سيرفر",
+                tab_all: "الكل (Mix)"
+            },
+            fa: {
+                dir: "rtl",
+                contact_tg: "تلگرام @RXAXX",
+                hero_sub: "سرورهای رایگان، تست شده و پرسرعت V2Ray و Sing-box با بروزرسانی خودکار",
+                stat_alive: "سرورهای فعال و تست شده",
+                stat_cycle: "بروزرسانی خودکار",
+                stat_updated: "آخرین بررسی",
+                sub_section_title: "📦 لینک‌های اشتراک (مناسب V2RayNG و Sing-box)",
+                nodes_section_title: "⚡ لیست مستقیم سرورها (کپی تکی کانفیگ‌ها)",
+                copy_sub: "📋 کپی لینک اشتراک",
+                copy_node: "📋 کپی کانفیگ",
+                copied_msg: "✅ با موفقیت کپی شد!",
+                load_more: "نمایش سرورهای بیشتر",
+                server_unit: "سرور",
+                tab_all: "همه سرورها"
+            },
+            ru: {
+                dir: "ltr",
+                contact_tg: "Telegram @RXAXX",
+                hero_sub: "Бесплатные проверенные серверы V2Ray и Sing-box с автоматическим обновлением",
+                stat_alive: "Активных серверов",
+                stat_cycle: "Интервал обновления",
+                stat_updated: "Последняя проверка",
+                sub_section_title: "📦 Ссылки на подписку (Для V2RayNG / Sing-box)",
+                nodes_section_title: "⚡ Список серверов (Копировать по одному)",
+                copy_sub: "📋 Скопировать подписку",
+                copy_node: "📋 Скопировать конфиг",
+                copied_msg: "✅ Скопировано в буфер!",
+                load_more: "Показать еще",
+                server_unit: "серв.",
+                tab_all: "Все серверы"
+            }
+        };
+
+        let currentLang = 'ar';
+        let currentTab = 'all';
+        let visibleCount = 24;
+
+        function copyText(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                toast.textContent = I18N[currentLang].copied_msg;
+                toast.classList.add('show');
+                setTimeout(() => toast.classList.remove('show'), 2200);
+            });
+        }
+
+        function renderSubscriptions() {
+            const subs = [
+                { id: 'all', title: '🌟 ALL MIX', count: ALL_LIST.length, file: 'all.txt' },
+                { id: 'vless', title: '🚀 VLESS', count: (RAW_NODES.vless || []).length, file: 'vless.txt' },
+                { id: 'vmess', title: '⚡ VMESS', count: (RAW_NODES.vmess || []).length, file: 'vmess.txt' },
+                { id: 'trojan', title: '🐎 TROJAN', count: (RAW_NODES.trojan || []).length, file: 'trojan.txt' },
+                { id: 'ss', title: '🛡️ SHADOWSOCKS', count: (RAW_NODES.ss || []).length, file: 'ss.txt' }
+            ];
+            const container = document.getElementById('sub-grid-container');
+            container.innerHTML = subs.map(s => `
+                <div class="sub-card">
+                    <h3>${s.title}</h3>
+                    <div class="sub-count">${s.count} ${I18N[currentLang].server_unit}</div>
+                    <button class="copy-sub-btn" onclick="copyText('${BASE_RAW_URL}/${s.file}')">
+                        ${I18N[currentLang].copy_sub}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function renderTabs() {
+            const tabs = [
+                { key: 'all', label: I18N[currentLang].tab_all, count: ALL_LIST.length },
+                { key: 'vless', label: 'VLESS', count: (RAW_NODES.vless || []).length },
+                { key: 'vmess', label: 'VMESS', count: (RAW_NODES.vmess || []).length },
+                { key: 'trojan', label: 'TROJAN', count: (RAW_NODES.trojan || []).length },
+                { key: 'ss', label: 'SHADOWSOCKS', count: (RAW_NODES.ss || []).length }
+            ];
+            const container = document.getElementById('tabs-container');
+            container.innerHTML = tabs.map(t => `
+                <button class="tab-btn ${currentTab === t.key ? 'active' : ''}" onclick="switchTab('${t.key}')">
+                    <span>${t.label}</span>
+                    <span class="badge">${t.count}</span>
+                </button>
+            `).join('');
+        }
+
+        function getFilteredList() {
+            if (currentTab === 'all') return ALL_LIST;
+            return (RAW_NODES[currentTab] || []).map((cfg, idx) => ({
+                proto: currentTab,
+                config: cfg,
+                id: idx + 1
+            }));
+        }
+
+        function renderNodes() {
+            const list = getFilteredList();
+            const slice = list.slice(0, visibleCount);
+            const container = document.getElementById('nodes-container');
+
+            container.innerHTML = slice.map((item, idx) => {
+                const safeCfg = item.config.replace(/'/g, "\\'");
+                return `
+                <div class="node-card">
+                    <div>
+                        <div class="node-header">
+                            <div class="node-title">
+                                <span class="online-dot"></span>
+                                <span>Haider Adel #${String(idx + 1).padStart(3, '0')}</span>
+                            </div>
+                            <span class="proto-badge proto-${item.proto}">${item.proto}</span>
+                        </div>
+                        <div class="node-code">${item.config.substring(0, 65)}...</div>
+                    </div>
+                    <button class="copy-node-btn" onclick="copyText('${safeCfg}')">
+                        ${I18N[currentLang].copy_node}
+                    </button>
+                </div>
+                `;
+            }).join('');
+
+            const loadBtn = document.getElementById('load-more-btn');
+            loadBtn.style.display = visibleCount >= list.length ? 'none' : 'inline-block';
+        }
+
+        function switchTab(tabKey) {
+            currentTab = tabKey;
+            visibleCount = 24;
+            renderTabs();
+            renderNodes();
+        }
+
+        function loadMoreNodes() {
+            visibleCount += 24;
+            renderNodes();
+        }
+
+        function setLanguage(lang) {
+            currentLang = lang;
+            document.documentElement.lang = lang;
+            document.documentElement.dir = I18N[lang].dir;
+
+            document.querySelectorAll('.lang-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('btn-' + lang).classList.add('active');
+
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (I18N[lang][key]) el.textContent = I18N[lang][key];
+            });
+
+            renderSubscriptions();
+            renderTabs();
+            renderNodes();
+        }
+
+        // تشغيل الموقع باللغة العربية افتراضياً (ويمكن للمستخدم التبديل لأي لغة)
+        setLanguage('ar');
+    </script>
 </body>
 </html>"""
+
+    final_html = (
+        html_template
+        .replace("__BRAND_NAME__", BRAND_NAME)
+        .replace("__TOTAL_COUNT__", str(total_count))
+        .replace("__DATE_NOW__", date_now)
+        .replace("__BASE_RAW_URL__", base_raw_url)
+        .replace("__TELEGRAM_USER__", TELEGRAM_USER)
+        .replace("__NODES_JSON__", json.dumps(nodes_for_js))
+    )
+
     with open("index.html", "w", encoding="utf-8") as f:
-        f.write(html_content)
+        f.write(final_html)
 
 def main():
     print(f"🚀 Starting {BRAND_NAME} Spider & Checker...")
     raw_nodes = []
     
-    # 1. سحب البيانات
     for url in SOURCES:
         try:
             resp = requests.get(url, timeout=10)
@@ -191,7 +712,6 @@ def main():
 
     categorized = {'vless': [], 'vmess': [], 'trojan': [], 'ss': [], 'all': []}
     
-    # 2. فحص السيرفرات بسرعة عالية (50 اتصال بنفس الوقت)
     with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
         futures = {executor.submit(check_and_rename_node, node, i+1): node for i, node in enumerate(unique_nodes)}
         for future in concurrent.futures.as_completed(futures):
@@ -209,7 +729,6 @@ def main():
         
     print(f"\n✅ Testing Complete! {total_alive} servers are alive & working.")
 
-    # 3. تشفير وحفظ الملفات مفصولة حسب البروتوكول
     for cat, nodes in categorized.items():
         if nodes:
             b64_content = base64.b64encode("\n".join(nodes).encode('utf-8')).decode('utf-8')
@@ -217,9 +736,8 @@ def main():
                 f.write(b64_content)
             print(f"💾 Saved {cat}.txt ({len(nodes)} nodes)")
 
-    # 4. بناء الموقع
     generate_html(categorized, total_alive)
-    print("🌍 Generated index.html")
+    print("🌍 Generated Interactive Multi-Language index.html")
 
 if __name__ == "__main__":
     main()
