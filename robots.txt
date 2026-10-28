@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://exhxx1.github.io/Free-V2Ray-Haider/sitemap.xml
