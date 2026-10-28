@@ -13,14 +13,26 @@ BRAND_NAME = "Haider Adel"
 SEO_SUFFIX = " | Haider Adel Free V2Ray"
 TELEGRAM_USER = "https://t.me/RXAXX"
 
-# المصادر العالمية لسحب السيرفرات
+# 18 مصدراً عالمياً تتحدث باستمرار
 SOURCES = [
     "https://shadowmere.xyz/api/b64sub/",
     "https://raw.githubusercontent.com/exhxx1/V2Nodes-Sub/main/sub.txt",
     "https://raw.githubusercontent.com/Pawdroid/Free-servers/main/sub",
     "https://raw.githubusercontent.com/mahdibland/ShadowsocksAggregator/master/Eternity",
     "https://raw.githubusercontent.com/w1770946466/Auto_proxy/main/Long_term_subscription4",
-    "https://raw.githubusercontent.com/tbbatbb/Proxy/master/main/sub.txt"
+    "https://raw.githubusercontent.com/tbbatbb/Proxy/master/main/sub.txt",
+    "https://raw.githubusercontent.com/barry-far/V2ray-Configs/main/All_Configs_Sub.txt",
+    "https://raw.githubusercontent.com/Epodonios/v2ray-configs/main/All_Configs_Sub.txt",
+    "https://raw.githubusercontent.com/yebekhe/TVC/main/subscriptions/xray/base64/mix",
+    "https://raw.githubusercontent.com/aiboboxx/v2rayfree/main/v2",
+    "https://raw.githubusercontent.com/ripaojiedian/freenode/main/sub",
+    "https://raw.githubusercontent.com/mfuu/v2ray/master/v2ray",
+    "https://raw.githubusercontent.com/ermaozi/get_subscribe/main/subscribe/v2ray.txt",
+    "https://raw.githubusercontent.com/MatinGhanbari/v2ray-configs/main/subscriptions/v2ray/all_sub.txt",
+    "https://raw.githubusercontent.com/ts-sf/fly/main/v2",
+    "https://raw.githubusercontent.com/peasoft/NoMoreWalls/master/list.txt",
+    "https://raw.githubusercontent.com/NiREvil/vless/main/sub/SSTime",
+    "https://raw.githubusercontent.com/alienvpn402/alienvpn402-subscribe-servers/main/index.html"
 ]
 
 def decode_base64(data):
@@ -33,45 +45,45 @@ def decode_base64(data):
     except:
         return ""
 
-def check_and_rename_node(node, index):
-    """فحص السيرفر (TCP Ping) وإضافة حقوق حيدر عادل للـ SEO"""
-    host = None
-    port = None
-    protocol = None
-    renamed_node = node
+def parse_node_info(node):
+    """استخراج البروتوكول والـ IP والبورت لمنع تكرار نفس السيرفر قبل الفحص"""
+    try:
+        protocol = node.split("://")[0].lower()
+        if protocol == "vmess":
+            b64_str = node[8:].split("#")[0]
+            config = json.loads(decode_base64(b64_str))
+            host = config.get("add") or config.get("host")
+            port = int(config.get("port", 0))
+            if host and port:
+                return (protocol, host, port, config)
+        elif protocol in ["vless", "trojan", "ss"]:
+            base_url = node.split("#")[0]
+            match = re.search(r'@([^:/?#]+):(\d+)', base_url)
+            if match:
+                return (protocol, match.group(1), int(match.group(2)), base_url)
+    except:
+        pass
+    return None
+
+def check_and_rename_node(parsed_item, index):
+    """فحص السيرفر (TCP Ping) وإعادة تسميته باسم حيدر عادل"""
+    protocol, host, port, payload = parsed_item
     new_name = f"Node {index:03d}{SEO_SUFFIX}"
 
     try:
-        protocol = node.split("://")[0].lower()
-
-        if protocol == "vmess":
-            b64_str = node[8:]
-            config = json.loads(decode_base64(b64_str))
-            host = config.get("add") or config.get("host")
-            port = config.get("port")
-            config["ps"] = new_name
-            renamed_node = f"vmess://{base64.b64encode(json.dumps(config).encode('utf-8')).decode('utf-8')}"
-            
-        elif protocol in ["vless", "trojan", "ss"]:
-            match = re.search(r'@([^:/?#]+):(\d+)', node)
-            if match:
-                host = match.group(1)
-                port = int(match.group(2))
-            base_url = node.split("#")[0]
-            renamed_node = f"{base_url}#{new_name}"
-        else:
-            return None
-            
+        socket.create_connection((host, port), timeout=1.2)
     except:
         return None
 
-    if host and port:
-        try:
-            socket.create_connection((host, int(port)), timeout=1.5)
-        except:
-            return None
-
-    return (protocol, renamed_node)
+    try:
+        if protocol == "vmess":
+            payload["ps"] = new_name
+            encoded = base64.b64encode(json.dumps(payload).encode('utf-8')).decode('utf-8')
+            return (protocol, f"vmess://{encoded}")
+        else:
+            return (protocol, f"{payload}#{new_name}")
+    except:
+        return None
 
 def generate_html(categorized_nodes, total_count):
     """بناء منصة ويب تفاعلية متعددة اللغات تعرض السيرفرات والروابط"""
@@ -120,7 +132,6 @@ def generate_html(categorized_nodes, total_count):
             padding-bottom: 60px;
         }
 
-        /* شريط اللغات والتواصل العلوي */
         .top-bar {
             background: rgba(21, 28, 40, 0.9);
             backdrop-filter: blur(10px);
@@ -135,11 +146,7 @@ def generate_html(categorized_nodes, total_count):
             flex-wrap: wrap;
             gap: 10px;
         }
-        .lang-switcher {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
+        .lang-switcher { display: flex; gap: 8px; flex-wrap: wrap; }
         .lang-btn {
             background: var(--bg-main);
             color: var(--text-muted);
@@ -171,7 +178,6 @@ def generate_html(categorized_nodes, total_count):
         }
         .tg-top-btn:hover { background: #006da3; box-shadow: 0 0 12px rgba(0,136,204,0.5); }
 
-        /* الهيدر الرئيسي */
         .hero {
             text-align: center;
             padding: 45px 20px 30px;
@@ -186,7 +192,6 @@ def generate_html(categorized_nodes, total_count):
         }
         .hero p { color: var(--text-muted); font-size: 1.1rem; max-width: 650px; margin: 0 auto 25px; }
 
-        /* شريط الإحصائيات */
         .stats-bar {
             display: flex;
             justify-content: center;
@@ -218,7 +223,6 @@ def generate_html(categorized_nodes, total_count):
             color: var(--text-main);
         }
 
-        /* بطاقات روابط الاشتراك */
         .sub-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
@@ -249,13 +253,7 @@ def generate_html(categorized_nodes, total_count):
         }
         .copy-sub-btn:hover { opacity: 0.9; box-shadow: 0 0 12px rgba(0,255,136,0.4); }
 
-        /* أزرار فلترة البروتوكولات */
-        .tabs-bar {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
+        .tabs-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
         .tab-btn {
             background: var(--bg-card);
             color: var(--text-main);
@@ -287,7 +285,6 @@ def generate_html(categorized_nodes, total_count):
             color: var(--accent);
         }
 
-        /* شبكة بطاقات السيرفرات الفردية */
         .nodes-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
@@ -303,40 +300,11 @@ def generate_html(categorized_nodes, total_count):
             justify-content: space-between;
             transition: 0.2s;
         }
-        .node-card:hover {
-            background: var(--bg-card-hover);
-            border-color: #3b4c66;
-        }
-        .node-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 12px;
-        }
-        .node-title {
-            font-weight: 700;
-            font-size: 0.95rem;
-            color: var(--text-main);
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-        .online-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent);
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 8px var(--accent);
-        }
-        .proto-badge {
-            font-size: 0.75rem;
-            font-weight: 800;
-            padding: 3px 9px;
-            border-radius: 5px;
-            text-transform: uppercase;
-            color: #fff;
-        }
+        .node-card:hover { background: var(--bg-card-hover); border-color: #3b4c66; }
+        .node-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .node-title { font-weight: 700; font-size: 0.95rem; color: var(--text-main); display: flex; align-items: center; gap: 6px; }
+        .online-dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; display: inline-block; box-shadow: 0 0 8px var(--accent); }
+        .proto-badge { font-size: 0.75rem; font-weight: 800; padding: 3px 9px; border-radius: 5px; text-transform: uppercase; color: #fff; }
         .proto-vless { background: var(--vless-color); }
         .proto-vmess { background: var(--vmess-color); }
         .proto-trojan { background: var(--trojan-color); }
@@ -368,10 +336,7 @@ def generate_html(categorized_nodes, total_count):
             transition: 0.2s;
             width: 100%;
         }
-        .copy-node-btn:hover {
-            background: var(--accent);
-            color: #0b0f17;
-        }
+        .copy-node-btn:hover { background: var(--accent); color: #0b0f17; }
 
         .load-more-wrap { text-align: center; margin-top: 28px; }
         .load-more-btn {
@@ -387,7 +352,6 @@ def generate_html(categorized_nodes, total_count):
         }
         .load-more-btn:hover { background: var(--accent); color: #0b0f17; }
 
-        /* إشعار النسخ العائم */
         #toast {
             position: fixed;
             bottom: 25px;
@@ -404,12 +368,7 @@ def generate_html(categorized_nodes, total_count):
         }
         #toast.show { transform: translateX(-50%) translateY(0); }
 
-        footer {
-            text-align: center;
-            margin-top: 50px;
-            color: var(--text-muted);
-            font-size: 0.9rem;
-        }
+        footer { text-align: center; margin-top: 50px; color: var(--text-muted); font-size: 0.9rem; }
     </style>
 </head>
 <body>
@@ -447,13 +406,11 @@ def generate_html(categorized_nodes, total_count):
     </div>
 
     <div class="container">
-        <!-- قسم روابط الاشتراك الشاملة -->
         <h2 class="section-title">
             <span data-i18n="sub_section_title">📦 Subscription Links (For V2RayNG / Sing-box / Streisand)</span>
         </h2>
         <div class="sub-grid" id="sub-grid-container"></div>
 
-        <!-- قسم عرض السيرفرات المفردة -->
         <h2 class="section-title">
             <span data-i18n="nodes_section_title">⚡ Direct Server List (Click to Copy Individual Configs)</span>
         </h2>
@@ -476,7 +433,6 @@ def generate_html(categorized_nodes, total_count):
         const BASE_RAW_URL = "__BASE_RAW_URL__";
         const RAW_NODES = __NODES_JSON__;
         
-        // تجميع الكل في مصفوفة واحدة مع نوع البروتوكول
         const ALL_LIST = [];
         ['vless', 'vmess', 'trojan', 'ss'].forEach(proto => {
             (RAW_NODES[proto] || []).forEach((cfg, idx) => {
@@ -484,7 +440,6 @@ def generate_html(categorized_nodes, total_count):
             });
         });
 
-        // قاموس الترجمة الكامل للموقع
         const I18N = {
             en: {
                 dir: "ltr",
@@ -617,7 +572,7 @@ def generate_html(categorized_nodes, total_count):
             const container = document.getElementById('nodes-container');
 
             container.innerHTML = slice.map((item, idx) => {
-                const safeCfg = item.config.replace(/'/g, "\\'");
+                const safeCfg = item.config.replace(/\\\\/g, "\\\\\\\\").replace(/'/g, "\\\\'");
                 return `
                 <div class="node-card">
                     <div>
@@ -671,7 +626,6 @@ def generate_html(categorized_nodes, total_count):
             renderNodes();
         }
 
-        // تشغيل الموقع باللغة العربية افتراضياً (ويمكن للمستخدم التبديل لأي لغة)
         setLanguage('ar');
     </script>
 </body>
@@ -691,29 +645,41 @@ def generate_html(categorized_nodes, total_count):
         f.write(final_html)
 
 def main():
-    print(f"🚀 Starting {BRAND_NAME} Spider & Checker...")
+    print(f"🚀 Starting {BRAND_NAME} Mega Spider & Checker (18 Sources)...")
     raw_nodes = []
     
     for url in SOURCES:
         try:
-            resp = requests.get(url, timeout=10)
+            resp = requests.get(url, timeout=12, headers={"User-Agent": "Mozilla/5.0"})
             if resp.status_code == 200:
-                text = resp.text
-                if "://" not in text[:50]:
-                    text = decode_base64(text)
-                links = re.findall(r'(vless://\S+|vmess://\S+|trojan://\S+|ss://\S+)', text)
+                text = resp.text.strip()
+                if "://" not in text[:80]:
+                    decoded = decode_base64(text)
+                    if "://" in decoded:
+                        text = decoded
+                links = re.findall(r'(?:vless|vmess|trojan|ss)://[^\s"\'<>]+', text)
                 raw_nodes.extend(links)
                 print(f"✅ Fetched {len(links)} nodes from {url}")
-        except:
-            pass
+        except Exception as e:
+            print(f"⚠️ Skipped {url}: {e}")
 
-    unique_nodes = list(set(raw_nodes))
-    print(f"\n🔍 Found {len(unique_nodes)} unique nodes. Starting Ping test...")
+    # فلترة السيرفرات لمنع فحص نفس الـ IP والبورت أكثر من مرة
+    unique_endpoints = {}
+    for node in raw_nodes:
+        info = parse_node_info(node)
+        if info:
+            protocol, host, port, payload = info
+            key = f"{protocol}:{host}:{port}"
+            if key not in unique_endpoints:
+                unique_endpoints[key] = info
+
+    items_to_test = list(unique_endpoints.values())[:2500]
+    print(f"\n🔍 Extracted {len(items_to_test)} unique IP:Port servers. Running fast TCP Ping...")
 
     categorized = {'vless': [], 'vmess': [], 'trojan': [], 'ss': [], 'all': []}
     
-    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
-        futures = {executor.submit(check_and_rename_node, node, i+1): node for i, node in enumerate(unique_nodes)}
+    with concurrent.futures.ThreadPoolExecutor(max_workers=120) as executor:
+        futures = {executor.submit(check_and_rename_node, item, i+1): item for i, item in enumerate(items_to_test)}
         for future in concurrent.futures.as_completed(futures):
             result = future.result()
             if result:
